@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的線上程式碼運行平台</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
+        header { background: #1e293b; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; flex-wrap: wrap; gap: 10px; }
+        h1 { font-size: 1.2rem; color: #38bdf8; }
+        .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        button, label.upload-btn { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        button:hover, label.upload-btn:hover { background: #2563eb; }
+        input[type="file"] { display: none; }
+        /* 改成 2x2 的網格，剛好容納 HTML, CSS, JS, C++ 四個方塊 */
+        .main-container { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; flex: 1; gap: 8px; padding: 8px; background: #0f172a; }
+        .pane { display: flex; flex-direction: column; background: #1e293b; border-radius: 8px; overflow: hidden; border: 1px solid #334155; }
+        .pane-header { background: #334155; padding: 6px 12px; font-size: 0.85rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        textarea { flex: 1; background: #0f172a; color: #e2e8f0; border: none; padding: 10px; font-family: monospace; font-size: 0.9rem; resize: none; outline: none; }
+        iframe { width: 100%; height: 100%; background: white; border: none; }
+        @media (max-width: 768px) {
+            .main-container { grid-template-columns: 1fr; grid-template-rows: repeat(5, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ 我的線上程式碼運行平台 (含 C++)</h1>
+        <div class="toolbar">
+            <label class="upload-btn">
+                📂 上傳 HTML
+                <input type="file" id="uploadHtml" accept=".html,.htm">
+            </label>
+            <label class="upload-btn">
+                📂 上傳 CSS
+                <input type="file" id="uploadCss" accept=".css">
+            </label>
+            <label class="upload-btn">
+                📂 上傳 JS
+                <input type="file" id="uploadJs" accept=".js">
+            </label>
+            <label class="upload-btn" style="background: #8b5cf6;">
+                📂 上傳 C++
+                <input type="file" id="uploadCpp" accept=".cpp,.h">
+            </label>
+            <button id="runBtn">▶ 執行網頁</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- HTML 編輯區 -->
+        <div class="pane">
+            <div class="pane-header"><span>HTML</span></div>
+            <textarea id="htmlCode" placeholder="在此輸入 HTML 程式碼...">&lt;div class="container"&gt;
+  &lt;h2&gt;Hello World!&lt;/h2&gt;
+  &lt;p&gt;這是一個可以放程式碼、上傳並即時運行的網頁。&lt;/p&gt;
+  &lt;button onclick="sayHello()"&gt;點我測試&lt;/button&gt;
+&lt;/div&gt;</textarea>
+        </div>
+
+        <!-- CSS 編輯區 -->
+        <div class="pane">
+            <div class="pane-header"><span>CSS</span></div>
+            <textarea id="cssCode" placeholder="在此輸入 CSS 程式碼...">body {
+  font-family: sans-serif;
+  background: #f0fdf4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+.container {
+  text-align: center;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+h2 { color: #16a34a; margin-bottom: 10px; }
+button {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+button:hover { background: #15803d; }</textarea>
+        </div>
+
+        <!-- JS 編輯區 -->
+        <div class="pane">
+            <div class="pane-header"><span>JavaScript</span></div>
+            <textarea id="jsCode" placeholder="在此輸入 JavaScript 程式碼...">function sayHello() {
+  alert("哈囉！你的網頁成功運行 JavaScript 了！");
+}</textarea>
+        </div>
+
+        <!-- C++ 編輯區 (新加入) -->
+        <div class="pane">
+            <div class="pane-header" style="background: #6d28d9;"><span>C++ (源碼編輯區)</span></div>
+            <textarea id="cppCode" placeholder="在此輸入或貼上你的 C++ 程式碼...">#include <iostream>
+
+int main() {
+    std::cout << "Hello C++ APCS!" << std::endl;
+    return 0;
+}</textarea>
+        </div>
+
+        <!-- 預覽執行區 -->
+        <div class="pane" style="grid-column: span 2;">
+            <div class="pane-header"><span>網頁預覽運行結果 (Preview)</span></div>
+            <iframe id="preview"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const htmlCode = document.getElementById('htmlCode');
+        const cssCode = document.getElementById('cssCode');
+        const jsCode = document.getElementById('jsCode');
+        const cppCode = document.getElementById('cppCode');
+        const preview = document.getElementById('preview');
+        const runBtn = document.getElementById('runBtn');
+
+        function updatePreview() {
+            const html = htmlCode.value;
+            const css = `<style>${cssCode.value}</style>`;
+            const js = `<script>${jsCode.value}<\/script>`;
+
+            const output = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    ${css}
+                </head>
+                <body>
+                    ${html}
+                    ${js}
+                </body>
+                </html>
+            `;
+
+            const iframeDoc = preview.contentDocument || preview.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(output);
+            iframeDoc.close();
+        }
+
+        runBtn.addEventListener('click', updatePreview);
+        htmlCode.addEventListener('input', updatePreview);
+        cssCode.addEventListener('input', updatePreview);
+        jsCode.addEventListener('input', updatePreview);
+
+        function handleFileUpload(inputElement, targetTextArea) {
+            inputElement.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    targetTextArea.value = e.target.result;
+                    // 如果上傳的是網頁相關檔案，順便更新預覽
+                    if (targetTextArea !== cppCode) {
+                        updatePreview();
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        handleFileUpload(document.getElementById('uploadHtml'), htmlCode);
+        handleFileUpload(document.getElementById('uploadCss'), cssCode);
+        handleFileUpload(document.getElementById('uploadJs'), jsCode);
+        handleFileUpload(document.getElementById('uploadCpp'), cppCode);
+
+        updatePreview();
+    </script>
+</body>
+</html>
